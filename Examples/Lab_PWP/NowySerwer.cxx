@@ -93,7 +93,7 @@ int main(int argc, char* argv[])
 
       //------------------------------------------------------------
       // loop
-      for (int i = 0; i < 100; i ++)
+      for (int i = 0; i < 1000; i ++)
         {
 
         // Initialize receive buffer
@@ -353,6 +353,9 @@ int ReceivePoint(igtl::Socket * socket, igtl::MessageHeader * header)
   pointMsg->SetMessageHeader(header);
   pointMsg->AllocatePack();
 
+  igtl::PointMessage::Pointer pointMSender;
+  pointMSender = igtl::PointMessage::New();
+  pointMSender->SetDeviceName("PointSender");
   // Receive transform data from the socket
   bool timeout(false);
   socket->Receive(pointMsg->GetPackBodyPointer(), pointMsg->GetPackBodySize(), timeout);
@@ -364,26 +367,34 @@ int ReceivePoint(igtl::Socket * socket, igtl::MessageHeader * header)
   if (c & igtl::MessageHeader::UNPACK_BODY) // if CRC check is OK
     {
     int nElements = pointMsg->GetNumberOfPointElement();
-    for (int i = 0; i < nElements; i ++)
-      {
-      igtl::PointElement::Pointer pointElement;
-      pointMsg->GetPointElement(i, pointElement);
+    for (int i = 0; i < nElements; i++)
+    {
+        igtl::PointElement::Pointer pointElement;
+        pointMsg->GetPointElement(i, pointElement);
 
-      igtlUint8 rgba[4];
-      pointElement->GetRGBA(rgba);
+        igtlUint8 rgba[4];
+        pointElement->GetRGBA(rgba);
 
-      igtlFloat32 pos[3];
-      pointElement->GetPosition(pos);
+        igtlFloat32 pos[3];
+        pointElement->GetPosition(pos);
 
-      std::cerr << "========== Element #" << i << " ==========" << std::endl;
-      std::cerr << " Name      : " << pointElement->GetName() << std::endl;
-      std::cerr << " GroupName : " << pointElement->GetGroupName() << std::endl;
-      std::cerr << " RGBA      : ( " << (int)rgba[0] << ", " << (int)rgba[1] << ", " << (int)rgba[2] << ", " << (int)rgba[3] << " )" << std::endl;
-      std::cerr << " Position  : ( " << std::fixed << pos[0] << ", " << pos[1] << ", " << pos[2] << " )" << std::endl;
-      std::cerr << " Radius    : " << std::fixed << pointElement->GetRadius() << std::endl;
-      std::cerr << " Owner     : " << pointElement->GetOwner() << std::endl;
-      std::cerr << "================================" << std::endl;
-      }
+        std::cerr << "========== Element #" << i << " ==========" << std::endl;
+        std::cerr << " Name      : " << pointElement->GetName() << std::endl;
+        std::cerr << " GroupName : " << pointElement->GetGroupName() << std::endl;
+        std::cerr << " RGBA      : ( " << (int)rgba[0] << ", " << (int)rgba[1] << ", " << (int)rgba[2] << ", " << (int)rgba[3] << " )" << std::endl;
+        std::cerr << " Position  : ( " << std::fixed << pos[0] << ", " << pos[1] << ", " << pos[2] << " )" << std::endl;
+        std::cerr << " Radius    : " << std::fixed << pointElement->GetRadius() << std::endl;
+        std::cerr << " Owner     : " << pointElement->GetOwner() << std::endl;
+        std::cerr << "================================" << std::endl;
+
+
+        pointElement->SetName("Point_New");
+        pointElement->SetGroupName("Group_1");
+        pointElement->SetPosition(-pos[0], -pos[1], -pos[2]);
+        pointMsg->AddPointElement(pointElement);
+        pointMsg->Pack();
+        socket->Send(pointMsg->GetPackPointer(), pointMsg->GetPackSize());
+    }
     }
 
   return 1;
